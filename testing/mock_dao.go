@@ -15,7 +15,7 @@ type dao struct {
 	sql        sq.SelectBuilder
 	upd        sq.UpdateBuilder
 	dlt        sq.DeleteBuilder
-	mocksOrder []MockData
+	mocksOrder *[]MockData
 }
 
 func NewDAO(tableName string, mocks ...MockData) pg.DAO {
@@ -24,7 +24,7 @@ func NewDAO(tableName string, mocks ...MockData) pg.DAO {
 		sql:        sq.Select(tableName + ".*").From(tableName),
 		upd:        sq.Update(tableName),
 		dlt:        sq.Delete(tableName),
-		mocksOrder: mocks,
+		mocksOrder: &mocks,
 	}
 }
 
@@ -49,12 +49,13 @@ func (d *dao) New() pg.DAO {
 }
 
 func (d *dao) Create(dto interface{}) (int64, error) {
-	if len(d.mocksOrder) == 0 {
+	if len(*d.mocksOrder) == 0 {
 		panic("empty mocks")
 	}
 
-	mock := d.mocksOrder[0]
-	d.mocksOrder = d.mocksOrder[1:]
+	mock := (*d.mocksOrder)[0]
+	next := (*d.mocksOrder)[1:]
+	d.mocksOrder = &next
 
 	return mock.Entry.(int64), mock.Error
 }
@@ -64,12 +65,13 @@ func (d *dao) Get(dto interface{}) (bool, error) {
 		return false, errors.New("argument is not a pointer")
 	}
 
-	if len(d.mocksOrder) == 0 {
+	if len(*d.mocksOrder) == 0 {
 		panic("empty mocks")
 	}
 
-	mock := d.mocksOrder[0]
-	d.mocksOrder = d.mocksOrder[1:]
+	mock := (*d.mocksOrder)[0]
+	next := (*d.mocksOrder)[1:]
+	d.mocksOrder = &next
 
 	mock.CheckSelectBuilder(d.sql)
 
@@ -82,12 +84,13 @@ func (d *dao) Select(list interface{}) error {
 		return errors.New("argument is not a slice pointer")
 	}
 
-	if len(d.mocksOrder) == 0 {
+	if len(*d.mocksOrder) == 0 {
 		panic("empty mocks")
 	}
 
-	mock := d.mocksOrder[0]
-	d.mocksOrder = d.mocksOrder[1:]
+	mock := (*d.mocksOrder)[0]
+	next := (*d.mocksOrder)[1:]
+	d.mocksOrder = &next
 
 	mock.CheckSelectBuilder(d.sql)
 
@@ -96,12 +99,13 @@ func (d *dao) Select(list interface{}) error {
 }
 
 func (d *dao) Delete() error {
-	if len(d.mocksOrder) == 0 {
+	if len(*d.mocksOrder) == 0 {
 		panic("empty mocks")
 	}
 
-	mock := d.mocksOrder[0]
-	d.mocksOrder = d.mocksOrder[1:]
+	mock := (*d.mocksOrder)[0]
+	next := (*d.mocksOrder)[1:]
+	d.mocksOrder = &next
 
 	mock.CheckDeleteBuilder(d.dlt)
 
@@ -109,12 +113,13 @@ func (d *dao) Delete() error {
 }
 
 func (d *dao) Update() error {
-	if len(d.mocksOrder) == 0 {
+	if len(*d.mocksOrder) == 0 {
 		panic("empty mocks")
 	}
 
-	mock := d.mocksOrder[0]
-	d.mocksOrder = d.mocksOrder[1:]
+	mock := (*d.mocksOrder)[0]
+	next := (*d.mocksOrder)[1:]
+	d.mocksOrder = &next
 
 	mock.CheckUpdateBuilder(d.upd)
 
