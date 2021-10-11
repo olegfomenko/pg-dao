@@ -56,7 +56,7 @@ func (d *dao) New() pg.DAO {
 }
 
 func (d *dao) Create(dto interface{}) (int64, error) {
-	d.log.Debug("Saving new record %v", dto)
+	d.log.Debug("Saving new record ", dto)
 
 	if len(*d.mocksOrder) == 0 {
 		panic("empty mocks")
@@ -140,79 +140,79 @@ func (d *dao) Update() error {
 }
 
 func (d *dao) FilterByID(id int64) pg.DAO {
-	d.log.Debug("Filtering by id %d", id)
+	d.log.Debug("Filtering by id: ", id)
 	d.sql = d.sql.Where(sq.Eq{pg.IdColumn: id})
 	return d
 }
 
 func (d *dao) FilterOnlyAfter(time time.Time) pg.DAO {
-	d.log.Debug("Filtering after time %s", time.String())
+	d.log.Debug("Filtering after time: ", time.String())
 	d.sql = d.sql.Where(sq.Gt{pg.CreatedAtColumn: time})
 	return d
 }
 
 func (d *dao) FilterOnlyBefore(time time.Time) pg.DAO {
-	d.log.Debug("Filtering before time %s", time.String())
+	d.log.Debug("Filtering before time: ", time.String())
 	d.sql = d.sql.Where(sq.Lt{pg.CreatedAtColumn: time})
 	return d
 }
 
 func (d *dao) FilterGreater(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering greater column: %s value: %v", col, val)
+	d.log.Debug("Filtering greater column:", col, "value: ", val)
 	d.sql = d.sql.Where(sq.Gt{col: val})
 	return d
 }
 
 func (d *dao) FilterLess(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering less column: %s value: %v", col, val)
+	d.log.Debug("Filtering less column:", col, "value: ", val)
 	d.sql = d.sql.Where(sq.Lt{col: val})
 	return d
 }
 
 func (d *dao) FilterByColumn(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering by column: %s value: %v", col, val)
+	d.log.Debug("Filtering by column:", col, "value: ", val)
 	d.sql = d.sql.Where(sq.Eq{col: val})
 	return d
 }
 
 func (d *dao) Limit(limit uint64) pg.DAO {
-	d.log.Debug("Limiting rows: %d", limit)
+	d.log.Debug("Limiting rows: ", limit)
 	d.sql = d.sql.Limit(limit)
 	return d
 }
 
 func (d *dao) OrderByDesc(col string) pg.DAO {
-	d.log.Debug("Ordering descending column: %s", col)
+	d.log.Debug("Ordering descending column: ", col)
 	d.sql = d.sql.OrderBy(fmt.Sprintf("%s %s", col, pg.OrderDescending))
 	return d
 }
 
 func (d *dao) OrderByAsc(col string) pg.DAO {
-	d.log.Debug("Ordering ascending column: %s", col)
+	d.log.Debug("Ordering ascending column: ", col)
 	d.sql = d.sql.OrderBy(fmt.Sprintf("%s %s", col, pg.OrderAscending))
 	return d
 }
 
 func (d *dao) UpdateWhereID(id int64) pg.DAO {
-	d.log.Debug("Updating by id %d", id)
+	d.log.Debug("Updating by id: ", id)
 	d.upd = d.upd.Where(sq.Eq{pg.IdColumn: id})
 	return d
 }
 
 func (d *dao) UpdateColumn(col string, val interface{}) pg.DAO {
-	d.log.Debug("Updating column: %s value: %v", col, val)
+	d.log.Debug("Updating column:", col, "value: ", val)
 	d.upd = d.upd.Set(col, val)
 	return d
 }
 
 func (d *dao) DeleteWhereVal(col string, val interface{}) pg.DAO {
-	d.log.Debug("Deleting where column: %s value: %v", col, val)
+	d.log.Debug("Deleting where column:", col, "value: ", val)
 	d.dlt = d.dlt.Where(sq.Eq{col: val})
 	return d
 }
 
 func (d *dao) DeleteWhereID(id int64) pg.DAO {
-	d.log.Debug("Deleting by id: %d", id)
+	d.log.Debug("Deleting by id: ", id)
 	d.dlt = d.dlt.Where(sq.Eq{pg.IdColumn: id})
 	return d
 }
