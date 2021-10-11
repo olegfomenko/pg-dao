@@ -16,5 +16,5 @@ type MockData struct {
 }
 
 func DefaultSelect(builder sq.SelectBuilder) {}
-func DefaultUpdate(builder sq.SelectBuilder) {}
+func DefaultUpdate(builder sq.UpdateBuilder) {}
 func DefaultDelete(builder sq.DeleteBuilder) {}
