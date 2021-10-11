@@ -158,19 +158,19 @@ func (d *dao) FilterOnlyBefore(time time.Time) pg.DAO {
 }
 
 func (d *dao) FilterGreater(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering greater column:", col, "value: ", val)
+	d.log.Debug("Filtering greater column:", col, " value: ", val)
 	d.sql = d.sql.Where(sq.Gt{col: val})
 	return d
 }
 
 func (d *dao) FilterLess(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering less column:", col, "value: ", val)
+	d.log.Debug("Filtering less column:", col, " value: ", val)
 	d.sql = d.sql.Where(sq.Lt{col: val})
 	return d
 }
 
 func (d *dao) FilterByColumn(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering by column:", col, "value: ", val)
+	d.log.Debug("Filtering by column:", col, " value: ", val)
 	d.sql = d.sql.Where(sq.Eq{col: val})
 	return d
 }
@@ -200,13 +200,13 @@ func (d *dao) UpdateWhereID(id int64) pg.DAO {
 }
 
 func (d *dao) UpdateColumn(col string, val interface{}) pg.DAO {
-	d.log.Debug("Updating column:", col, "value: ", val)
+	d.log.Debug("Updating column:", col, " value: ", val)
 	d.upd = d.upd.Set(col, val)
 	return d
 }
 
 func (d *dao) DeleteWhereVal(col string, val interface{}) pg.DAO {
-	d.log.Debug("Deleting where column:", col, "value: ", val)
+	d.log.Debug("Deleting where column:", col, " value: ", val)
 	d.dlt = d.dlt.Where(sq.Eq{col: val})
 	return d
 }
