@@ -55,7 +55,7 @@ func (d *dao) Create(dto interface{}) (int64, error) {
 
 	mock := (*d.mocksOrder)[0]
 	next := (*d.mocksOrder)[1:]
-	d.mocksOrder = &next
+	*d.mocksOrder = next
 
 	return mock.Entry.(int64), mock.Error
 }
@@ -71,7 +71,7 @@ func (d *dao) Get(dto interface{}) (bool, error) {
 
 	mock := (*d.mocksOrder)[0]
 	next := (*d.mocksOrder)[1:]
-	d.mocksOrder = &next
+	*d.mocksOrder = next
 
 	mock.CheckSelectBuilder(d.sql)
 
@@ -90,7 +90,7 @@ func (d *dao) Select(list interface{}) error {
 
 	mock := (*d.mocksOrder)[0]
 	next := (*d.mocksOrder)[1:]
-	d.mocksOrder = &next
+	*d.mocksOrder = next
 
 	mock.CheckSelectBuilder(d.sql)
 
@@ -105,7 +105,7 @@ func (d *dao) Delete() error {
 
 	mock := (*d.mocksOrder)[0]
 	next := (*d.mocksOrder)[1:]
-	d.mocksOrder = &next
+	*d.mocksOrder = next
 
 	mock.CheckDeleteBuilder(d.dlt)
 
@@ -119,7 +119,7 @@ func (d *dao) Update() error {
 
 	mock := (*d.mocksOrder)[0]
 	next := (*d.mocksOrder)[1:]
-	d.mocksOrder = &next
+	*d.mocksOrder = next
 
 	mock.CheckUpdateBuilder(d.upd)
 
