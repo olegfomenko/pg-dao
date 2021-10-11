@@ -39,6 +39,7 @@ func (d *dao) Clone() pg.DAO {
 		upd:        sq.Update(d.tableName),
 		dlt:        sq.Delete(d.tableName),
 		mocksOrder: d.mocksOrder,
+		log:        d.log,
 	}
 }
 
@@ -50,6 +51,7 @@ func (d *dao) New() pg.DAO {
 		upd:        sq.Update(d.tableName),
 		dlt:        sq.Delete(d.tableName),
 		mocksOrder: d.mocksOrder,
+		log:        d.log,
 	}
 }
 
