@@ -30,19 +30,21 @@ func NewDAO(tableName string, mocks ...MockData) pg.DAO {
 
 func (d *dao) Clone() pg.DAO {
 	return &dao{
-		tableName: d.tableName,
-		sql:       sq.Select(d.tableName + ".*").From(d.tableName),
-		upd:       sq.Update(d.tableName),
-		dlt:       sq.Delete(d.tableName),
+		tableName:  d.tableName,
+		sql:        sq.Select(d.tableName + ".*").From(d.tableName),
+		upd:        sq.Update(d.tableName),
+		dlt:        sq.Delete(d.tableName),
+		mocksOrder: d.mocksOrder,
 	}
 }
 
 func (d *dao) New() pg.DAO {
 	return &dao{
-		tableName: d.tableName,
-		sql:       sq.Select(d.tableName + ".*").From(d.tableName),
-		upd:       sq.Update(d.tableName),
-		dlt:       sq.Delete(d.tableName),
+		tableName:  d.tableName,
+		sql:        sq.Select(d.tableName + ".*").From(d.tableName),
+		upd:        sq.Update(d.tableName),
+		dlt:        sq.Delete(d.tableName),
+		mocksOrder: d.mocksOrder,
 	}
 }
 
