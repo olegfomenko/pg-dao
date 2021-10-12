@@ -46,6 +46,26 @@ func main() {
 
 	// Deleting entry
 	err = dao.DeleteWhereID(id).Delete()
+	
+	
+	// Creating transaction
+	err = dao.TransactionSerializable(func(q pg.DAO) error {
+		ok, err = q.FilterByID(id).Get(&entry)
+		if err != nil {
+			// rollback transaction
+			return err
+        }
+		
+        
+        err = q.UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
+		if err != nil {
+			// rollback transaction
+			return err
+		}
+
+		// commit transaction
+		return nil
+	})
 }
 ```
 
