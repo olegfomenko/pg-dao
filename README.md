@@ -39,17 +39,17 @@ func main() {
 	// Getting entry by id
 	var entry Entry
 	// if ok is false - there is no entry with provided id
-	ok, err := dao.FilterByID(id).Get(&entry)
+	ok, err := dao.New().FilterByID(id).Get(&entry)
 
 	// Getting entry by field
-	ok, err = dao.FilterByColumn("name", "New First Entry").Get(&entry)
+	ok, err = dao.New().FilterByColumn("name", "New First Entry").Get(&entry)
 
 	// Deleting entry
-	err = dao.DeleteWhereID(id).Delete()
+	err = dao.New().DeleteWhereID(id).Delete()
 	
 	
 	// Creating transaction
-	err = dao.TransactionSerializable(func(q pg.DAO) error {
+	err = dao.Clone().TransactionSerializable(func(q pg.DAO) error {
 		ok, err = q.FilterByID(id).Get(&entry)
 		if err != nil {
 			// rollback transaction
@@ -57,7 +57,7 @@ func main() {
         }
 		
         
-        err = q.UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
+        err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
 		if err != nil {
 			// rollback transaction
 			return err
@@ -132,6 +132,6 @@ func TestMain(t *testing.T) {
 	
 	
 	// returns true, nil and fills entry like Entry{1, "First Entry"} due second mock data
-	ok, err = mockDB.FilterByID(1).Get(&entry)
+	ok, err = mockDB.New().FilterByID(1).Get(&entry)
 }
 ```
