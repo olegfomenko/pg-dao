@@ -1,6 +1,7 @@
 package pg_dao
 
 import (
+	"database/sql"
 	"gitlab.com/distributed_lab/kit/pgdb"
 	"gitlab.com/distributed_lab/logan/v3/errors"
 )
@@ -46,4 +47,5 @@ type DAO interface {
 
 	Transaction(fn func(q DAO) error) error
 	TransactionSerializable(fn func(q DAO) error) error
+	TransactionWithLevel(level sql.IsolationLevel, fn func(q DAO) error) error
 }
