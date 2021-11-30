@@ -63,7 +63,6 @@ func (d *dao) Get(dto interface{}) (bool, error) {
 	if reflect.ValueOf(dto).Type().Kind() != reflect.Ptr {
 		return false, errors.New("argument is not a pointer")
 	}
-
 	err := d.db.Get(dto, d.sql)
 	if err == sql.ErrNoRows {
 		return false, nil
@@ -186,6 +185,12 @@ func (d *dao) Transaction(fn func(q DAO) error) (err error) {
 
 func (d *dao) TransactionSerializable(fn func(q DAO) error) error {
 	return d.db.TransactionWithOptions(&sql.TxOptions{Isolation: sql.LevelSerializable}, func() error {
+		return fn(d)
+	})
+}
+
+func (d *dao) TransactionWithLevel(level sql.IsolationLevel, fn func(q DAO) error) error {
+	return d.db.TransactionWithOptions(&sql.TxOptions{Isolation: level}, func() error {
 		return fn(d)
 	})
 }
