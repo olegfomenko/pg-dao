@@ -49,6 +49,16 @@ func (d *dao) New() DAO {
 	}
 }
 
+func (d *dao) Count() DAO {
+	return &dao{
+		tableName: d.tableName,
+		db:        d.db,
+		sql:       sq.Select("count(*)").From(d.tableName),
+		upd:       sq.Update(d.tableName),
+		dlt:       sq.Delete(d.tableName),
+	}
+}
+
 func (d *dao) Create(dto interface{}) (int64, error) {
 	clauses := structs.Map(dto)
 

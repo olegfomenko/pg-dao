@@ -20,6 +20,7 @@ var ErrNotFound = errors.New("record not found")
 type DAO interface {
 	Clone() DAO
 	New() DAO
+	Count() DAO
 
 	Create(dto interface{}) (int64, error)
 
