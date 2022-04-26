@@ -54,10 +54,10 @@ func main() {
 		if err != nil {
 			// rollback transaction
 			return err
-        }
+        	}
 		
         
-        err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
+        	err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
 		if err != nil {
 			// rollback transaction
 			return err
