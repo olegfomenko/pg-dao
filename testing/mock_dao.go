@@ -1,14 +1,15 @@
 package testing
 
 import (
+	"database/sql"
 	"fmt"
+	"reflect"
+
 	sq "github.com/Masterminds/squirrel"
 	pg "github.com/olegfomenko/pg-dao"
 	"gitlab.com/distributed_lab/kit/pgdb"
 	"gitlab.com/distributed_lab/logan/v3"
 	"gitlab.com/distributed_lab/logan/v3/errors"
-	"reflect"
-	"time"
 )
 
 type dao struct {
@@ -48,6 +49,18 @@ func (d *dao) New() pg.DAO {
 	return &dao{
 		tableName:  d.tableName,
 		sql:        sq.Select(d.tableName + ".*").From(d.tableName),
+		upd:        sq.Update(d.tableName),
+		dlt:        sq.Delete(d.tableName),
+		mocksOrder: d.mocksOrder,
+		log:        d.log,
+	}
+}
+
+func (d *dao) Count() pg.DAO {
+	d.log.Debug("Counting records")
+	return &dao{
+		tableName:  d.tableName,
+		sql:        sq.Select("count(*)").From(d.tableName),
 		upd:        sq.Update(d.tableName),
 		dlt:        sq.Delete(d.tableName),
 		mocksOrder: d.mocksOrder,
@@ -145,17 +158,17 @@ func (d *dao) FilterByID(id int64) pg.DAO {
 	return d
 }
 
-func (d *dao) FilterOnlyAfter(time time.Time) pg.DAO {
-	d.log.Debug("Filtering after time: ", time.String())
-	d.sql = d.sql.Where(sq.Gt{pg.CreatedAtColumn: time})
-	return d
-}
+// func (d *dao) FilterOnlyAfter(time time.Time) pg.DAO {
+// 	d.log.Debug("Filtering after time: ", time.String())
+// 	d.sql = d.sql.Where(sq.Gt{pg.CreatedAtColumn: time})
+// 	return d
+// }
 
-func (d *dao) FilterOnlyBefore(time time.Time) pg.DAO {
-	d.log.Debug("Filtering before time: ", time.String())
-	d.sql = d.sql.Where(sq.Lt{pg.CreatedAtColumn: time})
-	return d
-}
+// func (d *dao) FilterOnlyBefore(time time.Time) pg.DAO {
+// 	d.log.Debug("Filtering before time: ", time.String())
+// 	d.sql = d.sql.Where(sq.Lt{pg.CreatedAtColumn: time})
+// 	return d
+// }
 
 func (d *dao) FilterGreater(col string, val interface{}) pg.DAO {
 	d.log.Debug("Filtering greater column:", col, " value: ", val)
@@ -231,5 +244,11 @@ func (d *dao) Transaction(fn func(q pg.DAO) error) (err error) {
 func (d *dao) TransactionSerializable(fn func(q pg.DAO) error) error {
 	d.log.Debug("Starting db serializable transaction")
 	defer d.log.Debug("Finishing db serializable transaction")
+	return fn(d)
+}
+
+func (d *dao) TransactionWithLevel(level sql.IsolationLevel, fn func(q pg.DAO) error) error {
+	d.log.Debug("Starting db transaction with level: ", level)
+	defer d.log.Debug("Finishing db transaction with level: ", level)
 	return fn(d)
 }
