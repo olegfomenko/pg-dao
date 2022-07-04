@@ -82,6 +82,46 @@ func (d *dao) Create(dto interface{}) (int64, error) {
 	return mock.Entry.(int64), mock.Error
 }
 
+// NOTE: Not defined in DAO interface
+//
+// func (d *dao) FilterOnlyAfter(time time.Time) pg.DAO {
+// 	d.log.Debug("Filtering after time: ", time.String())
+// 	d.sql = d.sql.Where(sq.Gt{pg.CreatedAtColumn: time})
+// 	return d
+// }
+
+// NOTE: Not defined in DAO interface
+//
+// func (d *dao) FilterOnlyBefore(time time.Time) pg.DAO {
+// 	d.log.Debug("Filtering before time: ", time.String())
+// 	d.sql = d.sql.Where(sq.Lt{pg.CreatedAtColumn: time})
+// 	return d
+// }
+
+func (d *dao) FilterByID(id int64) pg.DAO {
+	d.log.Debug("Filtering by id: ", id)
+	d.sql = d.sql.Where(sq.Eq{pg.IdColumn: id})
+	return d
+}
+
+func (d *dao) FilterGreater(col string, val interface{}) pg.DAO {
+	d.log.Debug("Filtering greater column:", col, " value: ", val)
+	d.sql = d.sql.Where(sq.Gt{col: val})
+	return d
+}
+
+func (d *dao) FilterLess(col string, val interface{}) pg.DAO {
+	d.log.Debug("Filtering less column:", col, " value: ", val)
+	d.sql = d.sql.Where(sq.Lt{col: val})
+	return d
+}
+
+func (d *dao) FilterByColumn(col string, val interface{}) pg.DAO {
+	d.log.Debug("Filtering by column:", col, " value: ", val)
+	d.sql = d.sql.Where(sq.Eq{col: val})
+	return d
+}
+
 func (d *dao) Get(dto interface{}) (bool, error) {
 	d.log.Debug("Getting record")
 	if reflect.ValueOf(dto).Type().Kind() != reflect.Ptr {
@@ -122,72 +162,6 @@ func (d *dao) Select(list interface{}) error {
 	return mock.Error
 }
 
-func (d *dao) Delete() error {
-	d.log.Debug("Deleting record")
-	if len(*d.mocksOrder) == 0 {
-		panic("empty mocks")
-	}
-
-	mock := (*d.mocksOrder)[0]
-	next := (*d.mocksOrder)[1:]
-	*d.mocksOrder = next
-
-	mock.CheckDeleteBuilder(d.dlt)
-
-	return mock.Error
-}
-
-func (d *dao) Update() error {
-	d.log.Debug("Updating record")
-	if len(*d.mocksOrder) == 0 {
-		panic("empty mocks")
-	}
-
-	mock := (*d.mocksOrder)[0]
-	next := (*d.mocksOrder)[1:]
-	*d.mocksOrder = next
-
-	mock.CheckUpdateBuilder(d.upd)
-
-	return mock.Error
-}
-
-func (d *dao) FilterByID(id int64) pg.DAO {
-	d.log.Debug("Filtering by id: ", id)
-	d.sql = d.sql.Where(sq.Eq{pg.IdColumn: id})
-	return d
-}
-
-// func (d *dao) FilterOnlyAfter(time time.Time) pg.DAO {
-// 	d.log.Debug("Filtering after time: ", time.String())
-// 	d.sql = d.sql.Where(sq.Gt{pg.CreatedAtColumn: time})
-// 	return d
-// }
-
-// func (d *dao) FilterOnlyBefore(time time.Time) pg.DAO {
-// 	d.log.Debug("Filtering before time: ", time.String())
-// 	d.sql = d.sql.Where(sq.Lt{pg.CreatedAtColumn: time})
-// 	return d
-// }
-
-func (d *dao) FilterGreater(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering greater column:", col, " value: ", val)
-	d.sql = d.sql.Where(sq.Gt{col: val})
-	return d
-}
-
-func (d *dao) FilterLess(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering less column:", col, " value: ", val)
-	d.sql = d.sql.Where(sq.Lt{col: val})
-	return d
-}
-
-func (d *dao) FilterByColumn(col string, val interface{}) pg.DAO {
-	d.log.Debug("Filtering by column:", col, " value: ", val)
-	d.sql = d.sql.Where(sq.Eq{col: val})
-	return d
-}
-
 func (d *dao) Limit(limit uint64) pg.DAO {
 	d.log.Debug("Limiting rows: ", limit)
 	d.sql = d.sql.Limit(limit)
@@ -218,6 +192,21 @@ func (d *dao) UpdateColumn(col string, val interface{}) pg.DAO {
 	return d
 }
 
+func (d *dao) Update() error {
+	d.log.Debug("Updating record")
+	if len(*d.mocksOrder) == 0 {
+		panic("empty mocks")
+	}
+
+	mock := (*d.mocksOrder)[0]
+	next := (*d.mocksOrder)[1:]
+	*d.mocksOrder = next
+
+	mock.CheckUpdateBuilder(d.upd)
+
+	return mock.Error
+}
+
 func (d *dao) DeleteWhereVal(col string, val interface{}) pg.DAO {
 	d.log.Debug("Deleting where column:", col, " value: ", val)
 	d.dlt = d.dlt.Where(sq.Eq{col: val})
@@ -229,6 +218,22 @@ func (d *dao) DeleteWhereID(id int64) pg.DAO {
 	d.dlt = d.dlt.Where(sq.Eq{pg.IdColumn: id})
 	return d
 }
+
+func (d *dao) Delete() error {
+	d.log.Debug("Deleting record")
+	if len(*d.mocksOrder) == 0 {
+		panic("empty mocks")
+	}
+
+	mock := (*d.mocksOrder)[0]
+	next := (*d.mocksOrder)[1:]
+	*d.mocksOrder = next
+
+	mock.CheckDeleteBuilder(d.dlt)
+
+	return mock.Error
+}
+
 func (d *dao) Page(params pgdb.OffsetPageParams) pg.DAO {
 	d.log.Debug("Applying page parms")
 	d.sql = params.ApplyTo(d.sql, "id")
