@@ -86,12 +86,7 @@ type Entry struct {
 }
 
 func TestMain(t *testing.T) {
-	cfg := config.New(kv.MustFromEnv())
-	
 	// Creating mock db with sql responses order
-	// You can provide CheckSelectBuilder, CheckUpdateBuilder 
-	// or CheckDeleteBuilder functions for checking sql query.
-	// Or use mockdb.DefaultSelect for skipping sql checks
 	mockDB := mockdb.New(t, "test").
 		Add(Entry{}, false, nil).
 		Add(Entry{
