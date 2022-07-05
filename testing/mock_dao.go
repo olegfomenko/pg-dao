@@ -13,72 +13,86 @@ import (
 )
 
 type dao struct {
-	tableName  string
-	sql        sq.SelectBuilder
-	upd        sq.UpdateBuilder
-	dlt        sq.DeleteBuilder
-	mocksOrder *[]MockData
-	t          *testing.T
+	tableName string
+	sql       sq.SelectBuilder
+	upd       sq.UpdateBuilder
+	dlt       sq.DeleteBuilder
+	mocks     chan *MockData
+	t         *testing.T
 }
 
-func NewDAO(tableName string, t *testing.T) pg.DAO {
+const mocksChanSize = 50
+
+func New(t *testing.T, tableName string) *dao {
 	return &dao{
-		tableName:  tableName,
-		sql:        sq.Select(tableName + ".*").From(tableName),
-		upd:        sq.Update(tableName),
-		dlt:        sq.Delete(tableName),
-		mocksOrder: nil,
-		t:          t,
+		tableName: tableName,
+		sql:       sq.Select(tableName + ".*").From(tableName),
+		upd:       sq.Update(tableName),
+		dlt:       sq.Delete(tableName),
+		// chan is bufferd to make it non-blocking on receive
+		mocks: make(chan *MockData, mocksChanSize),
+		t:     t,
 	}
+}
+
+func (d *dao) Add(ret interface{}, ok bool, err error) *dao {
+	d.mocks <- &MockData{
+		Entry: ret,
+		Ok:    ok,
+		Error: err,
+	}
+	return d
+}
+
+func (d *dao) DAO() pg.DAO {
+	close(d.mocks)
+	return d
 }
 
 func (d *dao) Clone() pg.DAO {
 	d.t.Log("Cloning dao")
 	return &dao{
-		tableName:  d.tableName,
-		sql:        sq.Select(d.tableName + ".*").From(d.tableName),
-		upd:        sq.Update(d.tableName),
-		dlt:        sq.Delete(d.tableName),
-		mocksOrder: d.mocksOrder,
-		t:          d.t,
+		tableName: d.tableName,
+		sql:       sq.Select(d.tableName + ".*").From(d.tableName),
+		upd:       sq.Update(d.tableName),
+		dlt:       sq.Delete(d.tableName),
+		mocks:     d.mocks,
+		t:         d.t,
 	}
 }
 
 func (d *dao) New() pg.DAO {
 	d.t.Log("Initializing new raws")
 	return &dao{
-		tableName:  d.tableName,
-		sql:        sq.Select(d.tableName + ".*").From(d.tableName),
-		upd:        sq.Update(d.tableName),
-		dlt:        sq.Delete(d.tableName),
-		mocksOrder: d.mocksOrder,
-		t:          d.t,
+		tableName: d.tableName,
+		sql:       sq.Select(d.tableName + ".*").From(d.tableName),
+		upd:       sq.Update(d.tableName),
+		dlt:       sq.Delete(d.tableName),
+		mocks:     d.mocks,
+		t:         d.t,
 	}
 }
 
 func (d *dao) Count() pg.DAO {
 	d.t.Log("Counting records")
 	return &dao{
-		tableName:  d.tableName,
-		sql:        sq.Select("count(*)").From(d.tableName),
-		upd:        sq.Update(d.tableName),
-		dlt:        sq.Delete(d.tableName),
-		mocksOrder: d.mocksOrder,
-		t:          d.t,
+		tableName: d.tableName,
+		sql:       sq.Select("count(*)").From(d.tableName),
+		upd:       sq.Update(d.tableName),
+		dlt:       sq.Delete(d.tableName),
+		mocks:     d.mocks,
+		t:         d.t,
 	}
 }
 
 func (d *dao) Create(dto interface{}) (int64, error) {
-	d.t.Log("Saving new record ", dto)
+	d.t.Logf("Saving new record %v", dto)
 
-	if len(*d.mocksOrder) == 0 {
+	if len(d.mocks) == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := (*d.mocksOrder)[0]
-	next := (*d.mocksOrder)[1:]
-	*d.mocksOrder = next
-
+	mock := <-d.mocks
 	return mock.Entry.(int64), mock.Error
 }
 
@@ -128,15 +142,11 @@ func (d *dao) Get(dto interface{}) (bool, error) {
 		return false, errors.New("argument is not a pointer")
 	}
 
-	if len(*d.mocksOrder) == 0 {
+	if len(d.mocks) == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := (*d.mocksOrder)[0]
-	next := (*d.mocksOrder)[1:]
-	*d.mocksOrder = next
-
-	mock.CheckSelectBuilder(d.sql)
+	mock := <-d.mocks
 
 	reflect.Indirect(reflect.ValueOf(dto)).Set(reflect.Indirect(reflect.ValueOf(mock.Entry)))
 	return mock.Ok, mock.Error
@@ -148,15 +158,11 @@ func (d *dao) Select(list interface{}) error {
 		return errors.New("argument is not a slice pointer")
 	}
 
-	if len(*d.mocksOrder) == 0 {
+	if len(d.mocks) == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := (*d.mocksOrder)[0]
-	next := (*d.mocksOrder)[1:]
-	*d.mocksOrder = next
-
-	mock.CheckSelectBuilder(d.sql)
+	mock := <-d.mocks
 
 	reflect.Indirect(reflect.ValueOf(list)).Set(reflect.Indirect(reflect.ValueOf(mock.Entry)))
 	return mock.Error
@@ -194,16 +200,11 @@ func (d *dao) UpdateColumn(col string, val interface{}) pg.DAO {
 
 func (d *dao) Update() error {
 	d.t.Log("Updating record")
-	if len(*d.mocksOrder) == 0 {
+	if len(d.mocks) == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := (*d.mocksOrder)[0]
-	next := (*d.mocksOrder)[1:]
-	*d.mocksOrder = next
-
-	mock.CheckUpdateBuilder(d.upd)
-
+	mock := <-d.mocks
 	return mock.Error
 }
 
@@ -221,15 +222,11 @@ func (d *dao) DeleteWhereID(id int64) pg.DAO {
 
 func (d *dao) Delete() error {
 	d.t.Log("Deleting record")
-	if len(*d.mocksOrder) == 0 {
+	if len(d.mocks) == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := (*d.mocksOrder)[0]
-	next := (*d.mocksOrder)[1:]
-	*d.mocksOrder = next
-
-	mock.CheckDeleteBuilder(d.dlt)
+	mock := <-d.mocks
 
 	return mock.Error
 }
@@ -254,6 +251,6 @@ func (d *dao) TransactionSerializable(fn func(q pg.DAO) error) error {
 
 func (d *dao) TransactionWithLevel(level sql.IsolationLevel, fn func(q pg.DAO) error) error {
 	d.t.Log("Starting db transaction with level: ", level)
-	defer d.t.Logf("Finishing db transaction with level: %d", level)
+	defer d.t.Log("Finishing db transaction with level: ", level)
 	return fn(d)
 }

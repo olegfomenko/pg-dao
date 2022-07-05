@@ -92,38 +92,14 @@ func TestMain(t *testing.T) {
 	// You can provide CheckSelectBuilder, CheckUpdateBuilder 
 	// or CheckDeleteBuilder functions for checking sql query.
 	// Or use mockdb.DefaultSelect for skipping sql checks
-	mockDB := mockdb.NewDAO("entries", cfg.Log(),
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry:              Entry{},
-			Error:              nil,
-			Ok:                 false,
-			T:                  t,
-		},
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry: Entry{
-				Id:   1,
-				Name: "First Entry",
-			},
-			Error: nil,
-			Ok:    true,
-			T:     t,
-		},
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry:              nil,
-			Error:              nil,
-			Ok:                 true,
-			T:                  t,
-		},
-	)
+	mockDB := mockdb.New(t, "test").
+		Add(Entry{}, false, nil).
+		Add(Entry{
+			Id: 1,
+			Name: "First Entry",
+		}, true, nil).
+		Add(nil, true, nil).
+		DAO()
 	
 	var entry Entry
 	
