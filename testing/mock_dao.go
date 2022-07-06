@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"container/list"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -17,7 +18,7 @@ type dao struct {
 	sql       sq.SelectBuilder
 	upd       sq.UpdateBuilder
 	dlt       sq.DeleteBuilder
-	mocks     chan *MockData
+	mocks     *list.List
 	t         *testing.T
 }
 
@@ -30,22 +31,46 @@ func New(t *testing.T, tableName string) *dao {
 		upd:       sq.Update(tableName),
 		dlt:       sq.Delete(tableName),
 		// chan is bufferd to make it non-blocking on receive
-		mocks: make(chan *MockData, mocksChanSize),
+		mocks: list.New(),
 		t:     t,
 	}
 }
 
 func (d *dao) Add(ret interface{}, ok bool, err error) *dao {
-	d.mocks <- &MockData{
-		Entry: ret,
-		Ok:    ok,
-		Error: err,
-	}
+	d.mocks.PushBack(&MockData{
+		selectChecker: DefaultQuerySelectChecker,
+		updateChecker: DefaultQueryUpdateChecker,
+		deleteChecker: DefaultQueryDeleteChecker,
+		Entry:         ret,
+		Ok:            ok,
+		Error:         err,
+	})
+	return d
+}
+
+// SelectChecker - adds sql query checker for last entry
+func (d *dao) SelectChecker(checker QuerySelectChecker) *dao {
+	entry := d.mocks.Back().Value.(*MockData)
+	entry.selectChecker = checker
+	return d
+}
+
+// UpdateChecker - adds sql query checker for last entry
+func (d *dao) UpdateChecker(checker QueryUpdateChecker) *dao {
+	entry := d.mocks.Back().Value.(*MockData)
+	entry.updateChecker = checker
+	return d
+
+}
+
+// DeleteChecker - adds sql query checker for last entry
+func (d *dao) DeleteChecker(checker QueryDeleteChecker) *dao {
+	entry := d.mocks.Back().Value.(*MockData)
+	entry.deleteChecker = checker
 	return d
 }
 
 func (d *dao) DAO() pg.DAO {
-	close(d.mocks)
 	return d
 }
 
@@ -88,11 +113,12 @@ func (d *dao) Count() pg.DAO {
 func (d *dao) Create(dto interface{}) (int64, error) {
 	d.t.Logf("Saving new record %v", dto)
 
-	if len(d.mocks) == 0 {
+	if d.mocks.Len() == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := <-d.mocks
+	mock := d.mocks.Front().Value.(*MockData)
+	d.mocks.Remove(d.mocks.Front())
 	return mock.Entry.(int64), mock.Error
 }
 
@@ -142,11 +168,14 @@ func (d *dao) Get(dto interface{}) (bool, error) {
 		return false, errors.New("argument is not a pointer")
 	}
 
-	if len(d.mocks) == 0 {
+	if d.mocks.Len() == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := <-d.mocks
+	mock := d.mocks.Front().Value.(*MockData)
+	d.mocks.Remove(d.mocks.Front())
+
+	mock.selectChecker(d.t, d.sql)
 
 	reflect.Indirect(reflect.ValueOf(dto)).Set(reflect.Indirect(reflect.ValueOf(mock.Entry)))
 	return mock.Ok, mock.Error
@@ -158,11 +187,14 @@ func (d *dao) Select(list interface{}) error {
 		return errors.New("argument is not a slice pointer")
 	}
 
-	if len(d.mocks) == 0 {
+	if d.mocks.Len() == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := <-d.mocks
+	mock := d.mocks.Front().Value.(*MockData)
+	d.mocks.Remove(d.mocks.Front())
+
+	mock.selectChecker(d.t, d.sql)
 
 	reflect.Indirect(reflect.ValueOf(list)).Set(reflect.Indirect(reflect.ValueOf(mock.Entry)))
 	return mock.Error
@@ -200,11 +232,15 @@ func (d *dao) UpdateColumn(col string, val interface{}) pg.DAO {
 
 func (d *dao) Update() error {
 	d.t.Log("Updating record")
-	if len(d.mocks) == 0 {
+	if d.mocks.Len() == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := <-d.mocks
+	mock := d.mocks.Front().Value.(*MockData)
+	d.mocks.Remove(d.mocks.Front())
+
+	mock.updateChecker(d.t, d.upd)
+
 	return mock.Error
 }
 
@@ -222,11 +258,14 @@ func (d *dao) DeleteWhereID(id int64) pg.DAO {
 
 func (d *dao) Delete() error {
 	d.t.Log("Deleting record")
-	if len(d.mocks) == 0 {
+	if d.mocks.Len() == 0 {
 		d.t.Fatal("empty mocks")
 	}
 
-	mock := <-d.mocks
+	mock := d.mocks.Front().Value.(*MockData)
+	d.mocks.Remove(d.mocks.Front())
+
+	mock.deleteChecker(d.t, d.dlt)
 
 	return mock.Error
 }
