@@ -76,8 +76,11 @@ Creating mocked dao
 package tests
 
 import (
-	mockdb "github.com/olegfomenko/pg-dao/testing"
+    "log"
 	"testing"
+	
+	mockdb "github.com/olegfomenko/pg-dao/testing"
+	"github.com/Masterminds/squirrel"
 )
 
 type Entry struct {
@@ -85,45 +88,16 @@ type Entry struct {
 	Name string `db:"name" structs:"name"`
 }
 
-func TestMain(t *testing.T) {
-	cfg := config.New(kv.MustFromEnv())
-	
+func TestSimple(t *testing.T) {
 	// Creating mock db with sql responses order
-	// You can provide CheckSelectBuilder, CheckUpdateBuilder 
-	// or CheckDeleteBuilder functions for checking sql query.
-	// Or use mockdb.DefaultSelect for skipping sql checks
-	mockDB := mockdb.NewDAO("entries", cfg.Log(),
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry:              Entry{},
-			Error:              nil,
-			Ok:                 false,
-			T:                  t,
-		},
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry: Entry{
-				Id:   1,
-				Name: "First Entry",
-			},
-			Error: nil,
-			Ok:    true,
-			T:     t,
-		},
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry:              nil,
-			Error:              nil,
-			Ok:                 true,
-			T:                  t,
-		},
-	)
+	mockDB := mockdb.New(t, "test").
+		Add(Entry{}, false, nil).
+		Add(Entry{
+			Id: 1,
+			Name: "First Entry",
+		}, true, nil).
+		Add(nil, true, nil).
+		DAO()
 	
 	var entry Entry
 	
@@ -133,5 +107,31 @@ func TestMain(t *testing.T) {
 	
 	// returns true, nil and fills entry like Entry{1, "First Entry"} due second mock data
 	ok, err = mockDB.New().FilterByID(1).Get(&entry)
+	
+	log.Printf("Entry: %+v", entry)
+}
+
+func Checker(t *testing.T, query squirrel.SelectBuilder) {
+	str, _, err := query.ToSql()
+	if err != nil {
+		t.Error(err)
+	}
+	if str != "SELECT * FROM entries WHERE id = ?" {
+		t.Errorf("Invalid query: %s", str)
+	}
+}
+
+func TestWithCheckers(t *testing.T) {
+	// Create mocked db with sql responses order, but
+	// this time with function that will check each sql query
+
+	mockDB := mockdb.New(t, "test").
+		Add(Entry{Name: "First Entry"}, true, nil).
+		SelectChecker(Checker).
+		DAO()
+
+	// returns true, nil and fills entry like Entry{1, "First Entry"} due first mock data
+	// and checks sql query with Checker function
+	err = mockDB.New().FilterByID(1).Get(&entry)
 }
 ```

@@ -1,20 +1,24 @@
 package testing
 
 import (
-	sq "github.com/Masterminds/squirrel"
 	"testing"
+
+	sq "github.com/Masterminds/squirrel"
 )
 
-type MockData struct {
-	CheckSelectBuilder func(builder sq.SelectBuilder)
-	CheckUpdateBuilder func(builder sq.UpdateBuilder)
-	CheckDeleteBuilder func(builder sq.DeleteBuilder)
-	Entry              interface{}
-	Error              error
-	Ok                 bool
-	T                  *testing.T
-}
+type QueryUpdateChecker func(*testing.T, sq.UpdateBuilder)
+type QueryDeleteChecker func(*testing.T, sq.DeleteBuilder)
+type QuerySelectChecker func(*testing.T, sq.SelectBuilder)
 
-func DefaultSelect(builder sq.SelectBuilder) {}
-func DefaultUpdate(builder sq.UpdateBuilder) {}
-func DefaultDelete(builder sq.DeleteBuilder) {}
+func DefaultQueryUpdateChecker(*testing.T, sq.UpdateBuilder) {}
+func DefaultQueryDeleteChecker(*testing.T, sq.DeleteBuilder) {}
+func DefaultQuerySelectChecker(*testing.T, sq.SelectBuilder) {}
+
+type MockData struct {
+	selectChecker QuerySelectChecker
+	updateChecker QueryUpdateChecker
+	deleteChecker QueryDeleteChecker
+	Entry         interface{}
+	Error         error
+	Ok            bool
+}
