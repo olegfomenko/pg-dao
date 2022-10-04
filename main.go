@@ -45,6 +45,7 @@ type DAO interface {
 	Delete() error
 
 	Page(params pgdb.OffsetPageParams) DAO
+	Cursor(params pgdb.CursorPageParams) DAO
 
 	Transaction(fn func(q DAO) error) error
 	TransactionSerializable(fn func(q DAO) error) error
