@@ -187,6 +187,11 @@ func (d *dao) Page(params pgdb.OffsetPageParams) DAO {
 	return d
 }
 
+func (d *dao) Cursor(params pgdb.CursorPageParams) DAO {
+	d.sql = params.ApplyTo(d.sql, IdColumn)
+	return d
+}
+
 func (d *dao) Transaction(fn func(q DAO) error) (err error) {
 	return d.db.Transaction(func() error {
 		return fn(d)
