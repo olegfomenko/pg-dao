@@ -209,3 +209,7 @@ func (d *dao) TransactionWithLevel(level sql.IsolationLevel, fn func(q DAO) erro
 		return fn(d)
 	})
 }
+
+func (d *dao) ExecRaw(fn func(raw *pgdb.DB) error) error {
+	return fn(d.db)
+}
