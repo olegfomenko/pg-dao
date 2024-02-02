@@ -47,17 +47,15 @@ func main() {
 	// Deleting entry
 	err = dao.New().DeleteWhereID(id).Delete()
 	
-	
 	// Creating transaction
 	err = dao.Clone().TransactionSerializable(func(q pg.DAO) error {
 		ok, err = q.FilterByID(id).Get(&entry)
 		if err != nil {
 			// rollback transaction
 			return err
-        	}
+        }
 		
-        
-        	err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
+        err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
 		if err != nil {
 			// rollback transaction
 			return err
@@ -66,72 +64,5 @@ func main() {
 		// commit transaction
 		return nil
 	})
-}
-```
-
-## Testing
-Creating mocked dao
-
-```go
-package tests
-
-import (
-	mockdb "github.com/olegfomenko/pg-dao/testing"
-	"testing"
-)
-
-type Entry struct {
-	Id   int64  `db:"id" structs:"-"`
-	Name string `db:"name" structs:"name"`
-}
-
-func TestMain(t *testing.T) {
-	cfg := config.New(kv.MustFromEnv())
-	
-	// Creating mock db with sql responses order
-	// You can provide CheckSelectBuilder, CheckUpdateBuilder 
-	// or CheckDeleteBuilder functions for checking sql query.
-	// Or use mockdb.DefaultSelect for skipping sql checks
-	mockDB := mockdb.NewDAO("entries", cfg.Log(),
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry:              Entry{},
-			Error:              nil,
-			Ok:                 false,
-			T:                  t,
-		},
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry: Entry{
-				Id:   1,
-				Name: "First Entry",
-			},
-			Error: nil,
-			Ok:    true,
-			T:     t,
-		},
-		mockdb.MockData{
-			CheckSelectBuilder: mockdb.DefaultSelect,
-			CheckUpdateBuilder: mockdb.DefaultUpdate,
-			CheckDeleteBuilder: mockdb.DefaultDelete,
-			Entry:              nil,
-			Error:              nil,
-			Ok:                 true,
-			T:                  t,
-		},
-	)
-	
-	var entry Entry
-	
-	// returns false, nil due to first mock data
-	ok, err := mockDB.FilterByID(1).Get(&entry)
-	
-	
-	// returns true, nil and fills entry like Entry{1, "First Entry"} due second mock data
-	ok, err = mockDB.New().FilterByID(1).Get(&entry)
 }
 ```

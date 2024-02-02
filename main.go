@@ -2,6 +2,7 @@ package pg_dao
 
 import (
 	"database/sql"
+
 	"gitlab.com/distributed_lab/kit/pgdb"
 	"gitlab.com/distributed_lab/logan/v3/errors"
 )
@@ -16,7 +17,7 @@ const (
 var ErrNotFound = errors.New("record not found")
 
 // A DAO describes main methods for common data access object.
-// Notice that you should use Clone() for every new request.
+// Notice that you should use Clone() to create new session and New() to use the same.
 type DAO interface {
 	Clone() DAO
 	New() DAO
@@ -44,8 +45,8 @@ type DAO interface {
 	DeleteWhereID(id int64) DAO
 	Delete() error
 
-	Page(params pgdb.OffsetPageParams) DAO
-	Cursor(params pgdb.CursorPageParams) DAO
+	Page(params pgdb.OffsetPageParams, column string) DAO
+	Cursor(params pgdb.CursorPageParams, column string) DAO
 
 	Transaction(fn func(q DAO) error) error
 	TransactionSerializable(fn func(q DAO) error) error

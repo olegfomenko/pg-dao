@@ -3,12 +3,13 @@ package pg_dao
 import (
 	"database/sql"
 	"fmt"
+	"reflect"
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/fatih/structs"
 	"gitlab.com/distributed_lab/kit/pgdb"
 	"gitlab.com/distributed_lab/logan/v3/errors"
-	"reflect"
-	"time"
 )
 
 type dao struct {
@@ -182,13 +183,13 @@ func (d *dao) Delete() error {
 	return nil
 }
 
-func (d *dao) Page(params pgdb.OffsetPageParams) DAO {
-	d.sql = params.ApplyTo(d.sql, "id")
+func (d *dao) Page(params pgdb.OffsetPageParams, column string) DAO {
+	d.sql = params.ApplyTo(d.sql, column)
 	return d
 }
 
-func (d *dao) Cursor(params pgdb.CursorPageParams) DAO {
-	d.sql = params.ApplyTo(d.sql, IdColumn)
+func (d *dao) Cursor(params pgdb.CursorPageParams, column string) DAO {
+	d.sql = params.ApplyTo(d.sql, column)
 	return d
 }
 
