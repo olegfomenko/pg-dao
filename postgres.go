@@ -1,7 +1,9 @@
 package pg_dao
 
 import (
+	"context"
 	"database/sql"
+	goerr "errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -61,21 +63,29 @@ func (d *dao) Count() DAO {
 }
 
 func (d *dao) Create(dto interface{}) (int64, error) {
+	return d.CreateCtx(context.TODO(), dto)
+}
+
+func (d *dao) CreateCtx(ctx context.Context, dto interface{}) (int64, error) {
 	clauses := structs.Map(dto)
 
 	var id int64
 	stmt := sq.Insert(d.tableName).SetMap(clauses).Suffix("returning id")
-	err := d.db.Get(&id, stmt)
+	err := d.db.GetContext(ctx, &id, stmt)
 
 	return id, err
 }
 
 func (d *dao) Get(dto interface{}) (bool, error) {
+	return d.GetCtx(context.TODO(), dto)
+}
+
+func (d *dao) GetCtx(ctx context.Context, dto interface{}) (bool, error) {
 	if reflect.ValueOf(dto).Type().Kind() != reflect.Ptr {
 		return false, errors.New("argument is not a pointer")
 	}
-	err := d.db.Get(dto, d.sql)
-	if err == sql.ErrNoRows {
+	err := d.db.GetContext(ctx, dto, d.sql)
+	if goerr.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
 
@@ -83,12 +93,16 @@ func (d *dao) Get(dto interface{}) (bool, error) {
 }
 
 func (d *dao) Select(list interface{}) error {
+	return d.SelectCtx(context.TODO(), list)
+}
+
+func (d *dao) SelectCtx(ctx context.Context, list interface{}) error {
 	if reflect.ValueOf(list).Type().Kind() != reflect.Ptr {
 		return errors.New("argument is not a slice pointer")
 	}
 
-	err := d.db.Select(list, d.sql)
-	if err == sql.ErrNoRows {
+	err := d.db.SelectContext(ctx, list, d.sql)
+	if goerr.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 
@@ -151,7 +165,11 @@ func (d *dao) UpdateColumn(col string, val interface{}) DAO {
 }
 
 func (d *dao) Update() error {
-	res, err := d.db.ExecWithResult(d.upd)
+	return d.UpdateCtx(context.TODO())
+}
+
+func (d *dao) UpdateCtx(ctx context.Context) error {
+	res, err := d.db.ExecWithResultContext(ctx, d.upd)
 	if err != nil {
 		return errors.Wrap(err, "unable to update row")
 	}
@@ -176,7 +194,11 @@ func (d *dao) DeleteWhereID(id int64) DAO {
 }
 
 func (d *dao) Delete() error {
-	err := d.db.Exec(d.dlt)
+	return d.DeleteCtx(context.TODO())
+}
+
+func (d *dao) DeleteCtx(ctx context.Context) error {
+	err := d.db.ExecContext(ctx, d.dlt)
 	if err != nil {
 		return errors.Wrap(err, "unable to delete row")
 	}
@@ -213,4 +235,8 @@ func (d *dao) TransactionWithLevel(level sql.IsolationLevel, fn func(q DAO) erro
 
 func (d *dao) ExecRaw(fn func(raw *pgdb.DB) error) error {
 	return fn(d.db)
+}
+
+func (d *dao) ExecRawCtx(ctx context.Context, fn func(ctx context.Context, raw *pgdb.DB) error) error {
+	return fn(ctx, d.db)
 }

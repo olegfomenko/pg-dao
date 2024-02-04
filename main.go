@@ -1,6 +1,7 @@
 package pg_dao
 
 import (
+	"context"
 	"database/sql"
 
 	"gitlab.com/distributed_lab/kit/pgdb"
@@ -24,6 +25,7 @@ type DAO interface {
 	Count() DAO
 
 	Create(dto interface{}) (int64, error)
+	CreateCtx(ctx context.Context, dto interface{}) (int64, error)
 
 	FilterByID(id int64) DAO
 	FilterGreater(col string, val interface{}) DAO
@@ -31,7 +33,10 @@ type DAO interface {
 	FilterByColumn(col string, val interface{}) DAO
 
 	Get(dto interface{}) (bool, error)
+	GetCtx(ctx context.Context, dto interface{}) (bool, error)
+
 	Select(list interface{}) error
+	SelectCtx(ctx context.Context, list interface{}) error
 
 	Limit(limit uint64) DAO
 	OrderByDesc(col string) DAO
@@ -39,11 +44,14 @@ type DAO interface {
 
 	UpdateWhereID(id int64) DAO
 	UpdateColumn(col string, val interface{}) DAO
+
 	Update() error
+	UpdateCtx(ctx context.Context) error
 
 	DeleteWhereVal(col string, val interface{}) DAO
 	DeleteWhereID(id int64) DAO
 	Delete() error
+	DeleteCtx(ctx context.Context) error
 
 	Page(params pgdb.OffsetPageParams, column string) DAO
 	Cursor(params pgdb.CursorPageParams, column string) DAO
@@ -53,4 +61,5 @@ type DAO interface {
 	TransactionWithLevel(level sql.IsolationLevel, fn func(q DAO) error) error
 
 	ExecRaw(func(raw *pgdb.DB) error) error
+	ExecRawCtx(ctx context.Context, fn func(ctx context.Context, raw *pgdb.DB) error) error
 }
