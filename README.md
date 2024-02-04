@@ -7,7 +7,10 @@ Data Access Object for PostgreSQL for Distributed Lab projects.
 ```go
 package main
 
-import pg "github.com/olegfomenko/pg-dao"
+import (
+	pg "github.com/olegfomenko/pg-dao"
+	"gitlab.com/distributed_lab/kit/kv"
+)
 
 type Entry struct {
 	Id   int64  `db:"id" structs:"-"`
@@ -46,16 +49,16 @@ func main() {
 
 	// Deleting entry
 	err = dao.New().DeleteWhereID(id).Delete()
-	
+
 	// Creating transaction
 	err = dao.Clone().TransactionSerializable(func(q pg.DAO) error {
 		ok, err = q.FilterByID(id).Get(&entry)
 		if err != nil {
 			// rollback transaction
 			return err
-        }
-		
-        err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
+		}
+
+		err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
 		if err != nil {
 			// rollback transaction
 			return err
@@ -65,4 +68,5 @@ func main() {
 		return nil
 	})
 }
+
 ```
