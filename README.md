@@ -8,6 +8,8 @@ Data Access Object for PostgreSQL for Distributed Lab projects.
 package main
 
 import (
+	"errors"
+
 	pg "github.com/olegfomenko/pg-dao"
 	"gitlab.com/distributed_lab/kit/kv"
 )
@@ -53,10 +55,15 @@ func main() {
 	// Creating transaction
 	err = dao.Clone().TransactionSerializable(
 		func(q pg.DAO) error {
-			ok, err = q.FilterByID(id).Get(&entry)
+			ok, err := q.FilterByID(id).Get(&entry)
 			if err != nil {
 				// rollback transaction
 				return err
+			}
+
+			if !ok {
+				// entry does not exist
+				return errors.New("not found")
 			}
 
 			err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
