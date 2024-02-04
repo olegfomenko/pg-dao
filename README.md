@@ -4,7 +4,7 @@ Data Access Object for PostgreSQL for Distributed Lab projects.
 
 ## Usage
 
-```
+```go
 package main
 
 import (
@@ -51,22 +51,24 @@ func main() {
 	err = dao.New().DeleteWhereID(id).Delete()
 
 	// Creating transaction
-	err = dao.Clone().TransactionSerializable(func(q pg.DAO) error {
-		ok, err = q.FilterByID(id).Get(&entry)
-		if err != nil {
-			// rollback transaction
-			return err
-		}
+	err = dao.Clone().TransactionSerializable(
+		func(q pg.DAO) error {
+			ok, err = q.FilterByID(id).Get(&entry)
+			if err != nil {
+				// rollback transaction
+				return err
+			}
 
-		err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
-		if err != nil {
-			// rollback transaction
-			return err
-		}
+			err = q.New().UpdateWhereID(id).UpdateColumn("name", "Updated First Entry").Update()
+			if err != nil {
+				// rollback transaction
+				return err
+			}
 
-		// commit transaction
-		return nil
-	})
+			// commit transaction
+			return nil
+		},
+	)
 }
 
 ```
